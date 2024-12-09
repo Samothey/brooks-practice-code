@@ -1,0 +1,308 @@
+---
+title: "brooks lake data test"
+author: "Samantha Peña"
+date: "2024-11-22"
+output: html_document
+---
+
+```{r}
+# Install required packages (if not already installed)
+install.packages("tidyverse")
+install.packages("readxl")
+
+# Load the libraries
+library(tidyverse)  # For data manipulation and visualization
+library(readxl)     # For reading Excel files
+
+```
+
+
+```{r}
+# Specify the correct file path
+file_path <- "~/Desktop/LAKE DATA/BROOKS LAKE DATA/WYDEQ 2021 Lander Phytoplankton Flat Data.xlsx"
+
+# Read the Excel file and specify the correct sheet
+data <- read_excel(path = file_path, sheet = "2021 Lander Phytoplankton")
+
+# Check the first few rows of your dataset
+head(data)
+
+# Check the structure of your dataset
+str(data)
+
+```
+
+.
+
+```{r}
+# Load stringr (part of tidyverse)
+library(stringr)
+
+# Filter rows where Sample_Station_Name contains "BROOKS"
+brooks_data <- cyanobacteria_data %>%
+  filter(str_detect(Sample_Station_Name, "Brooks Lake"))
+
+# View the filtered data
+head(brooks_data)
+
+```
+
+(a) Spatial Summary
+
+Summarize the total abundance of cyanobacteria by location within the BROOKS dataset.
+```{r}
+# Summarize total abundance at BROOKS stations
+brooks_spatial_summary <- brooks_data %>%
+  group_by(Sample_Station_Name) %>%
+  summarise(total_abundance = sum(TotalCells_L, na.rm = TRUE)) %>%
+  arrange(desc(total_abundance))
+
+# View the spatial summary
+brooks_spatial_summary
+
+```
+
+Create a bar plot of cyanobacteria abundance at BROOKS stations.
+
+```{r}
+ggplot(brooks_spatial_summary, aes(x = reorder(Sample_Station_Name, total_abundance), y = total_abundance)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  coord_flip() +
+  labs(
+    title = "Cyanobacteria Abundance at Brooks ",
+    x = "Station Name",
+    y = "Total Abundance (cells/L)"
+  ) +
+  theme_minimal()
+
+```
+(a) Temporal Summary
+
+Summarize cyanobacteria abundance over time at BROOKS stations.
+
+```{r}
+# Summarize abundance by date
+brooks_temporal_summary <- brooks_data %>%
+  group_by(Sample_Date_Collected) %>%
+  summarise(total_abundance = sum(TotalCells_L, na.rm = TRUE)) %>%
+  arrange(Sample_Date_Collected)
+
+# View the temporal summary
+brooks_temporal_summary
+
+```
+b) Visualize Temporal Trends
+
+Create a line plot showing how cyanobacteria abundance changes over time at BROOKS stations.
+
+```{r}
+ggplot(brooks_temporal_summary, aes(x = Sample_Date_Collected, y = total_abundance, group = 1)) +
+  geom_line(color = "blue", linewidth = 1) +
+  labs(
+    title = "Temporal Trends in Cyanobacteria Abundance at BROOKS Stations",
+    x = "Date",
+    y = "Total Abundance (cells/L)"
+  ) +
+  theme_minimal()
+
+```
+(a) Identify Dominant Species
+
+Summarize cyanobacteria species abundance at BROOKS stations.
+
+```{r}
+# Summarize species abundance at BROOKS stations
+brooks_species_summary <- brooks_data %>%
+  group_by(Taxon) %>%
+  summarise(total_abundance = sum(TotalCells_L, na.rm = TRUE)) %>%
+  arrange(desc(total_abundance))
+
+# View the dominant species
+brooks_species_summary
+
+```
+b) Visualize Species-Specific Temporal Trends
+
+Examine how individual species vary over time at BROOKS stations.
+
+```{r}
+ggplot(brooks_data, aes(x = Sample_Date_Collected, y = TotalCells_L, color = Taxon)) +
+  geom_line(size = 1) +
+  labs(
+    title = "Temporal Trends of Cyanobacteria Species at BROOKS Stations",
+    x = "Date",
+    y = "Abundance (cells/L)",
+    color = "Species"
+  ) +
+  theme_minimal()
+
+```
+##  Line Graphs (Temporal Trends of Individual Species)
+```{r}
+ggplot(brooks_data, aes(x = Sample_Date_Collected, y = TotalCells_L, color = Taxon, group = Taxon)) +
+  geom_line(size = 1) +
+  labs(
+    title = "Temporal Trends of Cyanobacteria Species at BROOKS Stations",
+    x = "Date",
+    y = "Abundance (cells/L)",
+    color = "Species"
+  ) +
+  theme_minimal()
+
+```
+
+## Stacked Area Chart (Total Composition Over Time)
+```{r}
+ggplot(brooks_data, aes(x = Sample_Date_Collected, y = TotalCells_L, fill = Taxon)) +
+  geom_area(alpha = 0.8) +
+  labs(
+    title = "Relative Abundance of Cyanobacteria Species Over Time",
+    x = "Date",
+    y = "Abundance (cells/L)",
+    fill = "Species"
+  ) +
+  theme_minimal()
+
+```
+
+## 3. Bar Plot (Dominant Species on Specific Dates)
+```{r}
+ggplot(brooks_data, aes(x = Sample_Date_Collected, y = TotalCells_L, fill = Taxon)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(
+    title = "Dominant Cyanobacteria Species on Sampling Dates",
+    x = "Date",
+    y = "Abundance (cells/L)",
+    fill = "Species"
+  ) +
+  theme_minimal()
+
+```
+##Heatmap (Species Abundance Across Time)
+
+```{r}
+
+install.packages("viridis")
+library(viridis)
+
+ggplot(brooks_data, aes(x = Sample_Date_Collected, y = Taxon, fill = TotalCells_L)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(
+    title = "Heatmap of Cyanobacteria Abundance by Species",
+    x = "Date",
+    y = "Species",
+    fill = "Abundance (cells/L)"
+  ) +
+  theme_minimal()
+
+```
+##Boxplot (Species Distribution Across Stations or Time)
+
+```{r}
+ggplot(brooks_data, aes(x = Taxon, y = TotalCells_L, fill = Taxon)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribution of Cyanobacteria Abundance by Species",
+    x = "Species",
+    y = "Abundance (cells/L)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+##Add in other years
+# For Excel files
+library(readxl)
+new_data <- read_excel("path_to_new_file.xlsx")
+
+# For CSV files
+c"path_to_new_file.csv")
+
+
+
+```{r}
+library(readxl)
+new_data <- read_excel("Desktop/LAKE DATA/BROOKS LAKE DATA/2020 Brooks Lake Phytoplankton Raw Data.xlsx")
+
+```
+
+```{r}
+colnames(data)        # Existing data column names
+colnames(new_data)    # New data column names
+
+```
+
+```{r}
+# Combine the two datasets
+combined_data <- bind_rows(data, new_data)
+
+# Check the combined data
+head(combined_data)
+
+```
+
+```{r}
+# Save as CSV
+write_csv(combined_data, "combined_cyanobacteria_data.csv")
+
+# Save as Excel
+install.packages("writexl")
+library(writexl)
+write_xlsx(combined_data, "combined_cyanobacteria_data.xlsx")
+
+```
+
+
+```{r}
+# Install and load lubridate if not already installed
+install.packages("lubridate")
+library(lubridate)
+
+# Add a Year column by extracting it from Sample_Date_Collected
+new_data <- new_data %>%
+  mutate(Year = year(Sample_Date_Collected))
+
+# Preview the updated data
+head(new_data)
+
+```
+
+
+
+
+
+
+
+
+```{r}
+combined_data %>%
+  group_by(Year, Sample_Date_Collected) %>%
+  summarise(total_abundance = sum(TotalCells_L, na.rm = TRUE)) %>%
+  ggplot(aes(x = Sample_Date_Collected, y = total_abundance, color = as.factor(Year))) +
+  geom_line(size = 1) +
+  labs(
+    title = "Cyanobacteria Abundance Across Years",
+    x = "Date",
+    y = "Abundance (cells/L)",
+    color = "Year"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
